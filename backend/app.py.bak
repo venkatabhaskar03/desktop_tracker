@@ -1,0 +1,165 @@
+ cat app.py
+from flask import Flask, request, jsonify
+import psycopg2
+
+app = Flask(__name__)
+
+@app.route('/activity', methods=['POST'])
+def activity():
+
+    data = request.json
+
+    conn = psycopg2.connect(
+        host="localhost",
+        database="monitoring",
+        user="ritemon",
+        password="YOUR_POSTGRES_PASSWORD"
+    )
+
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO system_health
+    (
+        hostname,
+        username,
+        cpu_usage,
+        ram_usage,
+        disk_usage,
+        idle_minutes
+    )
+    VALUES (%s,%s,%s,%s,%s,%s)
+    """,
+    (
+        data["hostname"],
+        data["username"],
+        data["cpu"],
+        data["ram"],
+        data["disk"],
+        data["idle"]
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return jsonify({"status":"success"})
+@app.route('/loginlogout', methods=['POST'])
+def loginlogout():
+
+    data = request.json
+
+    conn = psycopg2.connect(
+        host="localhost",
+        database="monitoring",
+        user="ritemon",
+        password="YOUR_PASSWORD"
+    )
+
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO login_logout
+    (
+        hostname,
+        username,
+        event_type,
+        event_time
+    )
+    VALUES (%s,%s,%s,NOW())
+    """,
+    (
+        data["hostname"],
+        data["username"],
+        data["event_type"]
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {"status":"success"}
+@app.route('/applications', methods=['POST'])
+def applications():
+
+    data=request.json
+
+    conn=psycopg2.connect(
+        host="localhost",
+        database="monitoring",
+        user="ritemon",
+        password="YOUR_PASSWORD"
+    )
+
+    cur=conn.cursor()
+
+    for app in data["apps"]:
+
+        cur.execute("""
+        INSERT INTO applications
+        (
+            hostname,
+            username,
+            process_name,
+            cpu_usage,
+            memory_usage,
+            capture_time
+        )
+        VALUES (%s,%s,%s,%s,%s,NOW())
+        """,
+        (
+            data["hostname"],
+            data["username"],
+            app["name"],
+            app["cpu"],
+            app["memory"]
+        ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return {"status":"success"}
+@app.route('/usb', methods=['POST'])
+def usb():
+
+    data=request.json
+
+    conn=psycopg2.connect(
+        host="localhost",
+        database="monitoring",
+        user="ritemon",
+        password="YOUR_PASSWORD"
+    )
+
+    cur=conn.cursor()
+
+    cur.execute("""
+    INSERT INTO usb_events
+    (
+        hostname,
+        username,
+        device_name,
+        serial_number,
+        action,
+        event_time
+    )
+    VALUES (%s,%s,%s,%s,%s,NOW())
+    """,
+    (
+        data["hostname"],
+        data["username"],
+        data["device_name"],
+        data["serial_number"],
+        data["action"]
+    ))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return {"status":"success"}
+app.run(host="0.0.0.0", port=5000)
